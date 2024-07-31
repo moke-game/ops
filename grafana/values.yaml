@@ -1,0 +1,64 @@
+cluster:
+  name: my-cluster
+externalServices:
+  prometheus:
+    host: https://prometheus-prod-13-prod-us-east-0.grafana.net
+    basicAuth:
+      username: "1400325"
+      password: glc_eyJvIjoiMTA0MjMwNSIsIm4iOiJzdGFjay04NDQ4MzktaW50ZWdyYXRpb24tcnVtYmxlLXByb2QtMS1ydW1ibGUtcHJvZC0xIiwiayI6IjQ0N2FBSTlqbnp6ckxJeTI1cnUzMjVrNCIsIm0iOnsiciI6InByb2QtdXMtZWFzdC0wIn19
+  loki:
+    host: https://logs-prod-006.grafana.net
+    basicAuth:
+      username: "799181"
+      password: glc_eyJvIjoiMTA0MjMwNSIsIm4iOiJzdGFjay04NDQ4MzktaW50ZWdyYXRpb24tcnVtYmxlLXByb2QtMS1ydW1ibGUtcHJvZC0xIiwiayI6IjQ0N2FBSTlqbnp6ckxJeTI1cnUzMjVrNCIsIm0iOnsiciI6InByb2QtdXMtZWFzdC0wIn19
+  tempo:
+    host: https://tempo-prod-04-prod-us-east-0.grafana.net:443
+    basicAuth:
+      username: "796938"
+      password: glc_eyJvIjoiMTA0MjMwNSIsIm4iOiJzdGFjay04NDQ4MzktaW50ZWdyYXRpb24tcnVtYmxlLXByb2QtMS1ydW1ibGUtcHJvZC0xIiwiayI6IjQ0N2FBSTlqbnp6ckxJeTI1cnUzMjVrNCIsIm0iOnsiciI6InByb2QtdXMtZWFzdC0wIn19
+metrics:
+  enabled: true
+  cost:
+    enabled: true
+  node-exporter:
+    enabled: true
+  configs:
+    - job_name: "integrations/cert-manager"
+      static_configs:
+        - targets: [ 'localhost:9402' ]
+      relabel_configs:
+        - action: replace
+          replacement: '<your-instance-name>'
+          target_label: instance
+
+logs:
+  enabled: true
+  pod_logs:
+    enabled: true
+  cluster_events:
+    enabled: true
+traces:
+  enabled: true
+receivers:
+  grpc:
+    enabled: true
+  http:
+    enabled: true
+  zipkin:
+    enabled: true
+opencost:
+  enabled: true
+  opencost:
+    exporter:
+      defaultClusterId: my-cluster
+    prometheus:
+      external:
+        url: https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom
+kube-state-metrics:
+  enabled: true
+prometheus-node-exporter:
+  enabled: true
+prometheus-operator-crds:
+  enabled: true
+grafana-agent: { }
+grafana-agent-logs: { }

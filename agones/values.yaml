@@ -1,0 +1,13 @@
+agones:
+  featureGates: "CountsAndLists=true"
+  ping:
+    install: false
+  allocator:
+    disableSecretCreation: true
+    disableMTLS: false
+    service:
+      serviceType: ClusterIP
+      http:
+        enabled: false
+gameservers:
+  maxPort: 7500

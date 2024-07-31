@@ -1,0 +1,157 @@
+# Default values for base.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: [ ]
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: { }
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: { }
+
+podLabels: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8081
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: { }
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: [ ]
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: { }
+# We usually recommend not to specify default resources and to leave this as a conscious
+# choice for the user. This also increases chances charts run on environments with little
+# resources, such as Minikube. If you do want to specify resources, uncomment the following
+# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes:
+  - name: tls-server
+    csi:
+      readOnly: true
+      driver: csi.cert-manager.io
+      volumeAttributes:
+        csi.cert-manager.io/issuer-name: "moke-root-ca"
+        csi.cert-manager.io/dns-names: "*.${POD_NAMESPACE}.svc.cluster.local"
+        csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
+        csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
+        csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
+        csi.cert-manager.io/duration: "168h"
+        csi.cert-manager.io/renew-before: "1h"
+  - name: tls-client
+    csi:
+      readOnly: true
+      driver: csi.cert-manager.io
+      volumeAttributes:
+        csi.cert-manager.io/issuer-name: "moke-root-ca"
+        csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
+        csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
+        csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
+        csi.cert-manager.io/duration: "168h"
+        csi.cert-manager.io/renew-before: "1h"
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+  - name: tls-client
+    mountPath: "/configs/tls-client"
+    readOnly: true
+  - name: tls-server
+    mountPath: "/configs/tls-server"
+    readOnly: true
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
+env: [ ]
+envDefaults:
+  - name: DEPLOYMENT
+    value: "prod"
+  - name: MTLS_ENABLE
+    value: "true"
+  - name: TLS_ENABLE
+    value: "true"
+  - name: OTEL_ENABLE
+    value: "true"
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://grafana-k8s-monitoring-grafana-agent.grafana.svc.cluster.local:4317"
+  - name: NATS_URL
+    value: "nats://nats.default.svc.cluster.local:4222"
+  - name: AUTH_URL
+    value: "auth.default.svc.cluster.local:8081"
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: mongodb-url
+  - name: DATABASE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: mongodb-password
+  - name: CACHE_URL
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: redis-url
+  - name: CACHE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: redis-password

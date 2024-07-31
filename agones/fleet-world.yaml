@@ -1,0 +1,97 @@
+# nonk8s
+apiVersion: "agones.dev/v1"
+kind: Fleet
+metadata:
+  name: world
+spec:
+  replicas: $REPLICAS
+  priorities: # which gameservers in the Fleet are most important to keep around - impacts scale down logic
+    - type: List # whether a count or a list. List uses the length as the value, count the current count value.
+      key: players # The key to grab data from. If not found on the GameServer, those GameServer with the key will have priority over those that do not.
+      order: Ascending # default is "ascending" so bigger number is better. "descending" would be "smaller number is better".
+  template:
+    spec:
+      ports:
+        - name: default
+          containerPort: 8888
+          protocol: TCP
+      health:
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      template:
+        spec:
+          containers:
+            - name: world
+              image: $ROOM_REGISTRY/room:$Version
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: "DEPLOYMENT"
+                  value: "prod"
+                - name: "MTLS_ENABLE"
+                  value: "true"
+                - name: "TLS_ENABLE"
+                  value: "true"
+                - name: OTEL_ENABLE
+                  value: "true"
+                - name: "OTEL_SERVICE_NAME"
+                  value: "world"
+                - name: "OTEL_EXPORTER_OTLP_ENDPOINT"
+                  value: "http://grafana-k8s-monitoring-grafana-agent.grafana.svc.cluster.local:4317"
+                - name: "AGONES_DEPLOYMENT"
+                  value: "prod"
+                - name: "AUTH_URL"
+                  value: "auth.default.svc.cluster.local:8081"
+                - name: "PROFILE_URL"
+                  value: "profile.default.svc.cluster.local:8081"
+                - name: "KNAPSACK_URL"
+                  value: "knapsack.default.svc.cluster.local:8081"
+                - name: "MISSION_URL"
+                  value: "mission.default.svc.cluster.local:8081"
+                - name: "ANALYTICS_URL"
+                  value: "analytics.default.svc.cluster.local:8081"
+                - name: NATS_URL
+                  value: "nats://nats.default.svc.cluster.local:4222"
+                - name: "CACHE_URL"
+                  valueFrom:
+                    secretKeyRef:
+                      name: moke-secret
+                      key: redis-url
+                - name: "CACHE_PASSWORD"
+                  valueFrom:
+                    secretKeyRef:
+                      name: moke-secret
+                      key: redis-password
+              volumeMounts:
+                - name: tls-client
+                  mountPath: "configs/tls-client"
+                  readOnly: true
+                - name: tls-server
+                  mountPath: "configs/tls-server"
+                  readOnly: true
+          volumes:
+            - name: tls-client
+              csi:
+                readOnly: true
+                driver: csi.cert-manager.io
+                volumeAttributes:
+                  csi.cert-manager.io/issuer-name: "moke-root-ca"
+                  csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
+                  csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
+                  csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
+                  csi.cert-manager.io/duration: "168h"
+                  csi.cert-manager.io/renew-before: "1h"
+            - name: tls-server
+              csi:
+                readOnly: true
+                driver: csi.cert-manager.io
+                volumeAttributes:
+                  csi.cert-manager.io/issuer-name: "moke-root-ca"
+                  csi.cert-manager.io/dns-names: ${POD_NAME}.${POD_NAMESPACE}.svc.cluster.local
+                  csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
+                  csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
+                  csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
+                  csi.cert-manager.io/duration: "168h"
+                  csi.cert-manager.io/renew-before: "1h"
+      lists: # list of lists.
+        players: # key for this list (players)
+          capacity: 100 # set capacity

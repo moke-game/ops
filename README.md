@@ -1,8 +1,8 @@
-# Rumble EKS 集群
+# moke EKS 集群
 
 ## Architecture
 
-![image](./draws/rumble.drawio.png)
+![image](./draws/moke.drawio.png)
 
 ## GameFlow
 
@@ -29,19 +29,12 @@
 
  ```shell
    aws configure // 配置aws cli 需要相关权限文件
-   aws eks update-kubeconfig --name rumble-prod --region ap-southeast-1
+   aws eks update-kubeconfig --name moke-prod --region ap-southeast-1
    winget install k9s // 安装k9s
    k9s // 查看集群状态
  ```
 
-## 服务Install
-
-* Login Helm Repo:
-   ```shell
-   aws ecr get-login-password --region ap-southeast-1 |helm registry login --username AWS --password-stdin  129354786961.dkr.ecr.ap-southeast-1.amazonaws.com
-   ```
-
-### Infrastructure:
+### Infrastructure deployment:
 
 * Install [mongodb](https://artifacthub.io/packages/helm/bitnami/mongodb)
    ```shell
@@ -74,43 +67,41 @@
 
 * [点击查看详细描述](./agones/readme.md)
 
-### Rumble services:
+## 部署 moke services:
 
-* 部署相关secrets
-
+* 部署相关secrets，类似于iap-secret,数据库密码等
    ```shell
    #iap-secret.yaml比较敏感，不要上传到git仓库
    kubectl apply -f ./iap/iap-secret.yaml
-  kubectl apply -f ./secret.yaml
+   kubectl apply -f ./secret.yaml
    ```
-* Install with jenkins http://192.168.90.29:8080/
 
 ## 发布流程：
 
-### 打包：
+1. 登录私有docker registry
 
 ```shell
-aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 129354786961.dkr.ecr.ap-southeast-1.amazonaws.com
+aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin <your docker private registry>
 ```
 
-* [Jenkins](http://192.168.90.29:8080/)
-* 选择指定更新的服务执行对应的任务:
-    * [platform-prod](http://192.168.90.29:8080/job/platform-prod/)
-    * [rumble-prod](http://192.168.90.29:8080/job/rumble-prod/)
+2. 构建镜像
 
-### 发布：
+```shell
+# fix {appname} to service name
+# 这里建议使用Jenkins/GitHub Actions自动化构建镜像
+docker buildx build -t {appname}<your docker private registry>:{version} --build-arg APP_NAME={appname} -f ./build/package/docker/Dockerfile .  --push
+```
 
-* 修改版本号
-    * 修改helm/base/Chart.yaml中的version,appVersion(自增)
+3. 发布服务
 
-* [推荐] 通过helm发布流程会自动创建相关的k8s资源，包括deployment、service、ingress等
+* TODO：通过configmap配置helm values.yaml 以实现不同环境下走不同的配置信息
+* 修改helm/base/Chart.yaml中的version,appVersion(自增)
 
-   ```shell
-  # 替换下面的[ServiceName]为具体的服务名称
-  helm upgrade --install [ServiceName] ./helm/base  -f ./helm/[ServiceName]/values.yaml 
-   ```
-* [不推荐] 发布所有服务流程:
-    * 执行Jenkins发布任务[rumble-deploy-prod](http://192.168.90.29:8080/job/rumble-deploy-prod/)
+```shell
+# fix {appname} to service name
+# 这里建议使用Jenkins/argoCD自动化发布服务
+helm upgrade --install {appname} ./helm/base  -f ./helm/{appname}/values.yaml 
+```
 
 ### 问题排查
 

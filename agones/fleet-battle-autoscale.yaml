@@ -1,0 +1,21 @@
+apiVersion: autoscaling.agones.dev/v1
+kind: FleetAutoscaler
+metadata:
+  name: fleet-autoscaler-battle
+spec:
+  fleetName: battle
+  policy:
+    type: Buffer  # List based autoscaling.
+    buffer:
+      # BufferSize is the size of a buffer based on the List capacity that is available over the current
+      # aggregate List length in the Fleet (available capacity).
+      # It can be specified either as an absolute value (i.e. 5) or percentage format (i.e. 5%).
+      # Must be bigger than 0. Required field.
+      bufferSize: 5
+      # MinCapacity is the minimum aggregate List total capacity across the fleet.
+      # If BufferSize is specified as a percentage, MinCapacity is required must be greater than 0.
+      # If non zero, MinCapacity must be smaller than MaxCapacity and must be greater than or equal to BufferSize.
+      minReplicas: 5
+      # MaxCapacity is the maximum aggregate List total capacity across the fleet.
+      # MaxCapacity must be greater than or equal to both MinCapacity and BufferSize. Required field.
+      maxReplicas: 100

@@ -1,0 +1,4 @@
+tcp:
+  8888: "default/bff:8888"
+controller:
+  replicaCount: 3

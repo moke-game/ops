@@ -1,0 +1,12 @@
+name: "scanning - action"
+on: [ pull_request ]
+jobs:
+
+  test:
+    permissions:
+      contents: read
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: TruffleHog OSS
+        uses: trufflesecurity/trufflehog@v3.80.3
