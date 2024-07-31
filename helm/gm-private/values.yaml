@@ -1,0 +1,111 @@
+# Default values for platform.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+
+image:
+  repository: <your docker private registry>/gm
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+nameOverride: "gm-private"
+fullnameOverride: "gm-private"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: { }
+  #    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+  #    nginx.ingress.kubernetes.io/auth-tls-secret: "default/platform-cert-2048"
+  hosts:
+    - host: gm.gameloyo.com
+      paths:
+        - path: /v1/gm/
+          pathType: Prefix
+    - host: dev-game.gameloyo.com
+      paths:
+        - path: /v1/version/
+          pathType: Prefix
+    - host: prod-game.gameloyo.com
+      paths:
+        - path: /v1/version/
+          pathType: Prefix
+    - host: gm.gameloyo.com
+      paths:
+        - path: /v1/version/
+          pathType: Prefix
+  tls:
+    - secretName: platform-cert-2048
+      hosts:
+        - gm.gameloyo.com
+
+# Additional volumes on the output Deployment definition.
+volumes:
+  - name: tls-client
+    csi:
+      readOnly: true
+      driver: csi.cert-manager.io
+      volumeAttributes:
+        csi.cert-manager.io/issuer-name: "moke-root-ca"
+        csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
+        csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
+        csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
+        csi.cert-manager.io/duration: "168h"
+        csi.cert-manager.io/renew-before: "1h"
+  - name: tls-server
+    csi:
+      readOnly: true
+      driver: csi.cert-manager.io
+      volumeAttributes:
+        csi.cert-manager.io/issuer-name: "moke-root-ca"
+        csi.cert-manager.io/dns-names: "*.${POD_NAMESPACE}.svc.cluster.local"
+        csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
+        csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
+        csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
+        csi.cert-manager.io/duration: "168h"
+        csi.cert-manager.io/renew-before: "1h"
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+  - name: tls-client
+    mountPath: "/configs/tls-client"
+    readOnly: true
+  - name: tls-server
+    mountPath: "/configs/tls-server"
+    readOnly: true
+envDefaults:
+  - name: DEPLOYMENT
+    value: "prod"
+  - name: MTLS_ENABLE
+    value: "true"
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://grafana-k8s-monitoring-grafana-agent.grafana.svc.cluster.local:4317"
+  - name: NATS_URL
+    value: "nats://nats.default.svc.cluster.local:4222"
+  - name: CACHE_URL
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: redis-url
+  - name: CACHE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: redis-password
+  - name: GM_MYSQL_URL
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: mysql-url
+  #  - name: CACHE_URL
+  #    value: "redis://redis-master.default.svc.cluster.local:6379"
+  - name: "AUTH_URL"
+    value: "auth.default.svc.cluster.local:8081"
+  - name: "CHAT_URL"
+    value: "chat.default.svc.cluster.local:8081"
+  - name: "KNAPSACK_URL"
+    value: "knapsack.default.svc.cluster.local:8081"
+  - name: "PROFILE_URL"
+    value: "profile.default.svc.cluster.local:8081"
+  - name: "MAIL_URL"
+    value: "mail.default.svc.cluster.local:8081"

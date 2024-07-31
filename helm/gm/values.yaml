@@ -1,0 +1,18 @@
+# Default values for platform.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+
+image:
+  repository: <your docker private registry>/gm
+nameOverride: "gm"
+fullnameOverride: "gm"
+env:
+  - name: "CASHBATTLE_URL"
+    value: "activity.default.svc.cluster.local:8081"
+  - name: GM_MYSQL_URL
+    valueFrom:
+      secretKeyRef:
+        name: moke-secret
+        key: mysql-url
