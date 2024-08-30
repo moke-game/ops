@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: game-config
+data:
+  # 服务模式: local, dev, prod
+  # 数据会添加当前模式到key的路径中，以实现不同环境的数据隔离，eg: user/local user/dev  user/prod
+  # local,dev: 1. 日志level: debug  2.不会recover panic, 快速失败 3. 不会验证登录token
+  # prod: 1. 日志level: info  2. 会recover panic 3. 会验证登录token
+  deployment: "dev"
+  # 开启客户端的TLS校验，客户端创建grpc连接时，需要提供证书
+  mtls_enable: "false"
+  # 开启服务端的TLS校验 mutual_tls_enable为true时，该值必须为true
+  tls_enable: "false"
+  # 开启 open telemetry 指标收集
+  otel_enable: "false"
+  # open telemetry 指标收集地址
+  otel_exporter_otlp_endpoint: "http://otel-collector:4317"
+  # nats地址
+  nats_url: "nats://nats.default.svc.cluster.local:4222"
+  # auth地址
+  auth_url: "auth.default.svc.cluster.local:8081"

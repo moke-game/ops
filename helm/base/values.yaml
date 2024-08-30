@@ -86,7 +86,7 @@ volumes:
       readOnly: true
       driver: csi.cert-manager.io
       volumeAttributes:
-        csi.cert-manager.io/issuer-name: "moke-root-ca"
+        csi.cert-manager.io/issuer-name: "root-ca"
         csi.cert-manager.io/dns-names: "*.${POD_NAMESPACE}.svc.cluster.local"
         csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
         csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
@@ -98,7 +98,7 @@ volumes:
       readOnly: true
       driver: csi.cert-manager.io
       volumeAttributes:
-        csi.cert-manager.io/issuer-name: "moke-root-ca"
+        csi.cert-manager.io/issuer-name: "root-ca"
         csi.cert-manager.io/issuer-kind: "AWSPCAClusterIssuer"
         csi.cert-manager.io/issuer-group: "awspca.cert-manager.io"
         csi.cert-manager.io/common-name: "${SERVICE_ACCOUNT_NAME}.${POD_NAMESPACE}"
@@ -122,36 +122,57 @@ affinity: { }
 env: [ ]
 envDefaults:
   - name: DEPLOYMENT
-    value: "prod"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: deployment
   - name: MTLS_ENABLE
-    value: "true"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: mtls_enable
   - name: TLS_ENABLE
-    value: "true"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: tls_enable
   - name: OTEL_ENABLE
-    value: "true"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: otel_enable
   - name: OTEL_EXPORTER_OTLP_ENDPOINT
-    value: "http://grafana-k8s-monitoring-grafana-agent.grafana.svc.cluster.local:4317"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: otel_exporter_otlp_endpoint
   - name: NATS_URL
-    value: "nats://nats.default.svc.cluster.local:4222"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: nats_url
   - name: AUTH_URL
-    value: "auth.default.svc.cluster.local:8081"
+    valueFrom:
+      configMapKeyRef:
+        name: game-config
+        key: auth_url
   - name: DATABASE_URL
     valueFrom:
       secretKeyRef:
-        name: moke-secret
+        name: game-secret
         key: mongodb-url
   - name: DATABASE_PASSWORD
     valueFrom:
       secretKeyRef:
-        name: moke-secret
+        name: game-secret
         key: mongodb-password
   - name: CACHE_URL
     valueFrom:
       secretKeyRef:
-        name: moke-secret
+        name: game-secret
         key: redis-url
   - name: CACHE_PASSWORD
     valueFrom:
       secretKeyRef:
-        name: moke-secret
+        name: game-secret
         key: redis-password

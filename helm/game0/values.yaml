@@ -1,0 +1,6 @@
+image:
+  repository: <your docker private registry>/game0
+fullnameOverride: "game0"
+nameOverride: "game0"
+env:
+
