@@ -1,4 +1,4 @@
-# EverJoy k8s 集群配置
+# moke-game k8s 集群配置
 
 ## Requirements:
 
